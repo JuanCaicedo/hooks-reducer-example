@@ -16,16 +16,11 @@ const setStatus = (test, status) => {
   remain stateless.
  */
 class TestRunner extends React.Component {
-  constructor(props) {
-    super()
-    this.state = {
-      tests: props.tests
-    }
-    this.handleStart = this.handleStart.bind(this)
-    this.handleFinished = this.handleFinished.bind(this)
+  state = {
+    tests: this.props.tests
   }
 
-  handleStart() {
+  handleStart = () => {
     this.setState({
       tests: this.state.tests.map(test => setStatus(test, 'Running')),
       started: true
@@ -35,7 +30,7 @@ class TestRunner extends React.Component {
     )
   }
 
-  handleFinished(result, description) {
+  handleFinished = (result, description) => {
     const index = R.findIndex(R.propEq('description', description))(
       this.state.tests
     )

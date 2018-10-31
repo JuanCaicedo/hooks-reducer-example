@@ -31,7 +31,7 @@ const TestRunner = ({ tests: _tests }) => {
   }
 
   const handleFinished = ({ result, description }) => {
-    const index = R.findIndex(R.propEq('description', description))(tests)
+    const index = R.findIndex(R.whereEq({ description }))(tests)
     const finishedTest = setStatus(tests[index], result)
     const updatedTests = R.update(index, finishedTest, tests)
     setTests(updatedTests)

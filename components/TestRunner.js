@@ -4,11 +4,11 @@ import TestRunnerView from './TestRunnerView'
 
 const setStatus = (test, status) => {
   if (status === true) {
-    return Object.assign({}, test, { status: 'Passed' })
+    return R.merge(test, { status: 'Passed' })
   } else if (status === false) {
-    return Object.assign({}, test, { status: 'Failed' })
+    return R.merge(test, { status: 'Failed' })
   }
-  return Object.assign({}, test, { status })
+  return R.merge(test, { status })
 }
 
 /*

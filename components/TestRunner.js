@@ -12,24 +12,14 @@ function reducer(state, action) {
     case 'testRunning':
       return {
         ...state,
-        tests: updateTest(
-          action.test.description,
-          {
-            ...action.test,
-            status: 'Running'
-          },
-          state.tests
-        )
+        tests: updateTest('Running', action.test, state.tests)
       }
     case 'testFinished':
       return {
         ...state,
         tests: updateTest(
-          action.test.description,
-          {
-            ...action.test,
-            status: 'Finished'
-          },
+          action.didPass ? 'Passed' : 'Failed',
+          action.test,
           state.tests
         )
       }
@@ -38,9 +28,9 @@ function reducer(state, action) {
   }
 }
 
-function updateTest(description, test, tests) {
-  const index = R.findIndex(R.whereEq({ description }))(tests)
-  const updatedTests = R.update(index, test, tests)
+function updateTest(status, test, tests) {
+  const index = R.findIndex(R.whereEq({ description: test.description }))(tests)
+  const updatedTests = R.update(index, { ...test, status }, tests)
   return updatedTests
 }
 
@@ -57,7 +47,9 @@ const TestRunner = ({ tests }) => {
     dispatch({ type: 'suiteRunning' })
     tests.forEach(test => {
       dispatch({ type: 'testRunning', test })
-      test.run(result => dispatch({ type: 'testFinished', test }))
+      test.run(result =>
+        dispatch({ type: 'testFinished', test, didPass: result })
+      )
     })
   }
 

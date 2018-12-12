@@ -1,43 +1,72 @@
 import * as R from 'ramda'
-import { useState } from 'react'
+import { useReducer } from 'react'
 
 import TestRunnerView from './TestRunnerView'
 
-const setStatus = (test, status) => {
-  if (status === true) {
-    return R.merge(test, { status: 'Passed' })
-  } else if (status === false) {
-    return R.merge(test, { status: 'Failed' })
+function reducer(state, action) {
+  switch (action.type) {
+    case 'suiteRunning':
+      return { ...state, started: true }
+    case 'suiteFinished':
+      return { ...state, started: false }
+    case 'testRunning':
+      return {
+        ...state,
+        tests: updateTest(
+          action.test.description,
+          {
+            ...action.test,
+            status: 'Running'
+          },
+          state.tests
+        )
+      }
+    case 'testFinished':
+      return {
+        ...state,
+        tests: updateTest(
+          action.test.description,
+          {
+            ...action.test,
+            status: 'Finished'
+          },
+          state.tests
+        )
+      }
+    default:
+      return state
   }
-  return R.merge(test, { status })
+}
+
+function updateTest(description, test, tests) {
+  const index = R.findIndex(R.whereEq({ description }))(tests)
+  const updatedTests = R.update(index, test, tests)
+  return updatedTests
 }
 
 /*
   This class handles the stateful side of running tests, allowing the views to
   remain stateless.
  */
-const TestRunner = ({ tests: _tests }) => {
-  const [tests, setTests] = useState(_tests)
-  const [started, setStarted] = useState(false)
-
+const TestRunner = ({ tests }) => {
+  const [state, dispatch] = useReducer(reducer, {
+    tests,
+    started: false
+  })
   const handleStart = () => {
-    setStarted(true)
-    setTests(tests.map(test => setStatus(test, 'Running')))
-    tests.forEach(test =>
-      test.run(result =>
-        handleFinished({ result, description: test.description })
-      )
-    )
+    dispatch({ type: 'suiteRunning' })
+    tests.forEach(test => {
+      dispatch({ type: 'testRunning', test })
+      test.run(result => dispatch({ type: 'testFinished', test }))
+    })
   }
 
-  const handleFinished = ({ result, description }) => {
-    const index = R.findIndex(R.whereEq({ description }))(tests)
-    const finishedTest = setStatus(tests[index], result)
-    const updatedTests = R.update(index, finishedTest, tests)
-    setTests(updatedTests)
-  }
   return (
-    <TestRunnerView tests={tests} started={started} handleStart={handleStart} />
+    <TestRunnerView
+      tests={state.tests}
+      started={state.started}
+      handleStart={handleStart}
+    />
   )
 }
 export default TestRunner

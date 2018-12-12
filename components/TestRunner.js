@@ -3,34 +3,6 @@ import { useReducer } from 'react'
 
 import TestRunnerView from './TestRunnerView'
 
-/*
-  This class handles the stateful side of running tests, allowing the views to
-  remain stateless.
- */
-const TestRunner = ({ tests }) => {
-  const [state, dispatch] = useReducer(reducer, {
-    tests,
-    started: false
-  })
-  const handleStart = () => {
-    dispatch({ type: 'suiteRunning' })
-    tests.forEach(test => {
-      dispatch({ type: 'testRunning', test })
-      test.run(result =>
-        dispatch({ type: 'testFinished', test, didPass: result })
-      )
-    })
-  }
-
-  return (
-    <TestRunnerView
-      tests={state.tests}
-      started={state.started}
-      handleStart={handleStart}
-    />
-  )
-}
-
 function reducer(state, action) {
   switch (action.type) {
     case 'suiteRunning':
@@ -62,4 +34,38 @@ function updateTest(status, test, tests) {
   return updatedTests
 }
 
+function handleStart(dispatch, tests) {
+  return () => {
+    dispatch({ type: 'suiteRunning' })
+    tests.forEach(handleTestStart(dispatch))
+  }
+}
+
+function handleTestStart(dispatch) {
+  return test => {
+    dispatch({ type: 'testRunning', test })
+    test.run(result =>
+      dispatch({ type: 'testFinished', test, didPass: result })
+    )
+  }
+}
+
+/*
+  This function handles the stateful side of running tests, allowing the views to
+  remain stateless.
+*/
+const TestRunner = ({ tests }) => {
+  const [state, dispatch] = useReducer(reducer, {
+    tests,
+    started: false
+  })
+
+  return (
+    <TestRunnerView
+      tests={state.tests}
+      started={state.started}
+      handleStart={handleStart(dispatch, tests)}
+    />
+  )
+}
 export default TestRunner
